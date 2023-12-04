@@ -2,10 +2,34 @@ from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpResponseRedirect,HttpResponse
+from django.contrib.auth import authenticate, login, logout
 
 
 # Create your views here.
 def login_page(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        user_obj = User.objects.filter(username = email)
+
+        if not user_obj.exists():
+            messages.warning(request, 'Account not found!!.')
+            return HttpResponseRedirect(request.path_info)
+        
+        if not user_obj[0].profile.is_email_verified:
+            messages.warning(request, 'Account is not verified!!.')
+            return HttpResponseRedirect(request.path_info)
+
+        user_obj = authenticate(username = email, password = password)
+        
+        if user_obj:
+            login(request, user_obj)
+            return redirect("/")
+        
+        messages.warning(request, 'Invalid Credentials!!!!')
+        return HttpResponseRedirect(request.path_info)
+
     return render(request, 'accounts/login.html')
 
 def register_page(request):
